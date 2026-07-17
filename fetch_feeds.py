@@ -1,7 +1,13 @@
 import feedparser
 
-url = "https://hnrss.org/frontpage"
-feed = feedparser.parse(url)
+urls =  [
+    "https://hnrss.org/frontpage",
+    "https://feeds.arstechnica.com/arstechnica/index",
+]
 
-for entry in feed.entries:
-    print(entry.title)
+for url in urls:
+    feed = feedparser.parse(url)
+    print (f"--- {feed.feed.get('title', url)} ---")
+    for entry in feed.entries:
+        print(entry.title)
+    print()
