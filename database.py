@@ -12,7 +12,8 @@ def create_table():
             title TEXT NOT NULL,
             link TEXT NOT NULL UNIQUE,
             source TEXT,
-            published TEXT
+            published TEXT,
+            read INTEGER DEFAULT 0
         )
     """)
     conn.commit()
