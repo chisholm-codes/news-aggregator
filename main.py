@@ -1,11 +1,12 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from database import get_connection
 
 app = FastAPI()
 
 @app.get("/")
-def read_root():
-    return {"message": "News aggregator API is running"}
+def serve_ui():
+    return FileResponse("static/index.html")
 
 @app.get("/articles")
 def get_articles(unread_only: bool = False, source: str = None):
