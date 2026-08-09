@@ -5,6 +5,9 @@ from database import get_connection, create_table
 urls = [
     "https://hnrss.org/frontpage",
     "https://feeds.arstechnica.com/arstechnica/index",
+    "https://kill-the-newsletter.com/feeds/yy4thlgfugnxqlrul4wp.xml",   # The Skimm
+    "https://kill-the-newsletter.com/feeds/wbiiuj15clqojigfiaps.xml",   # San Pedro Gazette
+    "https://kill-the-newsletter.com/feeds/0k9t5zcjbg7h1hvqz709.xml",   # TLDR
 ]
 
 def save_article(cursor, title, link, source, published):
