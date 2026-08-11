@@ -1,0 +1,3 @@
+.venv/
+news.db
+__pycache__/
