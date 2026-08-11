@@ -1,8 +1,22 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from apscheduler.schedulers.background import BackgroundScheduler
 from database import get_connection
+from fetch_feeds import fetch_all
 
-app = FastAPI()
+scheduler = BackgroundScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Running initial fetch on startup...")
+    fetch_all()
+    scheduler.add_job(fetch_all, "interval", hours=24)
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def serve_ui():
