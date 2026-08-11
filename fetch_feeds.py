@@ -29,13 +29,18 @@ def fetch_all():
         feed = feedparser.parse(url)
         source_name = feed.feed.get("title", url)
         for entry in feed.entries:
-            save_article(
-                cursor,
-                entry.title,
-                entry.link,
-                source_name,
-                entry.get("published", ""),
-            )
+                published_date = ""
+                if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    import time
+                    published_date = time.strftime("%Y-%m-%d %H:%M:%S", entry.published_parsed)
+
+                save_article(
+                    cursor,
+                    entry.title,
+                    entry.link,
+                    source_name,
+                    published_date,
+                )
 
     conn.commit()
     conn.close()
