@@ -66,3 +66,8 @@ def mark_read(article_id: int):
     conn.commit()
     conn.close()
     return {"id": article_id, "read": True}
+
+@app.post("/fetch")
+def trigger_fetch():
+    fetch_all()
+    return {"status": "fetch complete"}

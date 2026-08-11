@@ -42,6 +42,7 @@
 </head>
 <body>
   <h1>My Daily Feed</h1>
+  <button onclick="refreshFeeds()">🔄 Refresh Feeds</button>
   <div id="articles"></div>
 
   <script>
@@ -71,6 +72,18 @@
       loadArticles();
     }
 
+    async function refreshFeeds() {
+      const button = document.querySelector('button[onclick="refreshFeeds()"]');
+      button.disabled = true;
+      button.textContent = 'Refreshing...';
+
+      await fetch('/fetch', { method: 'POST' });
+      await loadArticles();
+
+      button.disabled = false;
+      button.textContent = '🔄 Refresh Feeds';
+    }
+    
     loadArticles();
   </script>
 </body>
