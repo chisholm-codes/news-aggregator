@@ -39,7 +39,7 @@ def get_articles(unread_only: bool = False, source: str = None):
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
-    query += " ORDER BY id DESC"
+    query += " ORDER BY published DESC"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
