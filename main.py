@@ -1,3 +1,4 @@
+import sqlite3
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -62,3 +63,35 @@ def get_articles(unread_only: bool = False, source: str = None):
 def trigger_fetch():
     fetch_all()
     return {"status": "fetch complete"}
+
+@app.get("/sources")
+def get_sources():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, url FROM sources")
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [{"id": row[0], "name": row[1], "url": row[2]} for row in rows]
+
+@app.post("/sources")
+def add_source(name: str, url: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO sources (name, url) VALUES (?, ?)", (name, url))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return {"error": "That URL is already added."}
+    conn.close()
+    return {"status": "added", "name": name, "url": url}
+
+@app.delete("/sources/{source_id}")
+def delete_source(source_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM sources WHERE id = ?", (source_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "deleted", "id": source_id}

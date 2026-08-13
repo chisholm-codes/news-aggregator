@@ -16,6 +16,13 @@ def create_table():
             read INTEGER DEFAULT 0
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            url TEXT NOT NULL UNIQUE
+        )
+    """)
     conn.commit()
     conn.close()
 
