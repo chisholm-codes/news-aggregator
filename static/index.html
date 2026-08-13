@@ -22,9 +22,6 @@
       margin-bottom: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .article.read {
-      opacity: 0.5;
-    }
     .source {
       font-size: 12px;
       color: #888;
@@ -58,21 +55,15 @@
 
       articles.forEach(article => {
         const div = document.createElement('div');
-        div.className = 'article' + (article.read ? ' read' : '');
+        div.className = 'article';
 
         div.innerHTML = `
           <div class="source">${article.source} · ${timeAgo(article.published)}</div>
           <div class="title"><a href="${article.link}" target="_blank">${article.title}</a></div>
-          <button onclick="markRead(${article.id})">Mark read</button>
         `;
 
         container.appendChild(div);
       });
-    }
-
-    async function markRead(id) {
-      await fetch(`/articles/${id}/read`, { method: 'POST' });
-      loadArticles();
     }
 
     async function refreshFeeds() {

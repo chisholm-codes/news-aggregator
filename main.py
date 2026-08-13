@@ -58,15 +58,6 @@ def get_articles(unread_only: bool = False, source: str = None):
 
     return articles
 
-@app.post("/articles/{article_id}/read")
-def mark_read(article_id: int):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE articles SET read = 1 WHERE id = ?", (article_id,))
-    conn.commit()
-    conn.close()
-    return {"id": article_id, "read": True}
-
 @app.post("/fetch")
 def trigger_fetch():
     fetch_all()
