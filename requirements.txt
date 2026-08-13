@@ -19,3 +19,5 @@ typing_extensions==4.16.0
 tzlocal==5.4.4
 urllib3==2.7.0
 uvicorn==0.52.1
+libsql==0.1.11
+python-dotenv==1.2.2

@@ -1,4 +1,3 @@
-import sqlite3
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -26,7 +25,6 @@ def serve_ui():
 @app.get("/articles")
 def get_articles(unread_only: bool = False, source: str = None):
     conn = get_connection()
-    cursor = conn.cursor()
 
     query = "SELECT id, title, link, source, published, read FROM articles"
     conditions = []
@@ -42,9 +40,7 @@ def get_articles(unread_only: bool = False, source: str = None):
         query += " WHERE " + " AND ".join(conditions)
     query += " ORDER BY published DESC"
 
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
+    rows = conn.execute(query, params).fetchall()
 
     articles = []
     for row in rows:
@@ -67,31 +63,22 @@ def trigger_fetch():
 @app.get("/sources")
 def get_sources():
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, url FROM sources")
-    rows = cursor.fetchall()
-    conn.close()
-
+    rows = conn.execute("SELECT id, name, url FROM sources").fetchall()
     return [{"id": row[0], "name": row[1], "url": row[2]} for row in rows]
 
 @app.post("/sources")
 def add_source(name: str, url: str):
     conn = get_connection()
-    cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO sources (name, url) VALUES (?, ?)", (name, url))
+        conn.execute("INSERT INTO sources (name, url) VALUES (?, ?)", (name, url))
         conn.commit()
-    except sqlite3.IntegrityError:
-        conn.close()
+    except ValueError:
         return {"error": "That URL is already added."}
-    conn.close()
     return {"status": "added", "name": name, "url": url}
 
 @app.delete("/sources/{source_id}")
 def delete_source(source_id: int):
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM sources WHERE id = ?", (source_id,))
+    conn.execute("DELETE FROM sources WHERE id = ?", (source_id,))
     conn.commit()
-    conn.close()
     return {"status": "deleted", "id": source_id}

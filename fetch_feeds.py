@@ -1,30 +1,25 @@
 import feedparser
-import sqlite3
 import time
 from database import get_connection, create_table
 
-def save_article(cursor, title, link, source, published):
+def save_article(conn, title, link, source, published):
     try:
-        cursor.execute("""
+        conn.execute("""
             INSERT INTO articles (title, link, source, published)
             VALUES (?, ?, ?, ?)
         """, (title, link, source, published))
-    except sqlite3.IntegrityError:
+    except ValueError:
         # This link already exists in the database — skip it
         pass
 
 def get_sources():
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT name, url FROM sources")
-    sources = cursor.fetchall()
-    conn.close()
+    sources = conn.execute("SELECT name, url FROM sources").fetchall()
     return sources
 
 def fetch_all():
     create_table()
     conn = get_connection()
-    cursor = conn.cursor()
 
     sources = get_sources()
 
@@ -36,7 +31,7 @@ def fetch_all():
                 published_date = time.strftime("%Y-%m-%d %H:%M:%S", entry.published_parsed)
 
             save_article(
-                cursor,
+                conn,
                 entry.title,
                 entry.link,
                 name,
@@ -44,7 +39,6 @@ def fetch_all():
             )
 
     conn.commit()
-    conn.close()
     print("Fetch complete.")
 
 if __name__ == "__main__":

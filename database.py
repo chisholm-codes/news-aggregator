@@ -1,12 +1,18 @@
-import sqlite3
+import os
+import libsql
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_connection():
-    return sqlite3.connect("news.db")
+    return libsql.connect(
+        database=os.environ["TURSO_DATABASE_URL"],
+        auth_token=os.environ["TURSO_AUTH_TOKEN"],
+    )
 
 def create_table():
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS articles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -16,7 +22,7 @@ def create_table():
             read INTEGER DEFAULT 0
         )
     """)
-    cursor.execute("""
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS sources (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -24,7 +30,6 @@ def create_table():
         )
     """)
     conn.commit()
-    conn.close()
 
 if __name__ == "__main__":
     create_table()
