@@ -1,6 +1,7 @@
 import feedparser
 import time
 from database import get_connection, create_table
+from datetime import datetime, timedelta
 
 def save_article(title, link, source, published):
     conn = get_connection()
@@ -22,22 +23,35 @@ def get_sources():
 def fetch_all():
     create_table()
     sources = get_sources()
+    delete_old_articles()
+    cutoff = datetime.now() - timedelta(days=7)
 
     for name, url in sources:
         feed = feedparser.parse(url)
         for entry in feed.entries:
             published_date = ""
+            entry_date = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
                 published_date = time.strftime("%Y-%m-%d %H:%M:%S", entry.published_parsed)
+                entry_date = datetime(*entry.published_parsed[:6]) 
 
-            save_article(
-                entry.title,
-                entry.link,
-                name,
-                published_date,
-            )
+            if entry_date is None or entry_date > cutoff:
+                save_article(
+                    entry.title,
+                    entry.link,
+                    name,
+                    published_date,
+                )
 
     print("Fetch complete.")
+
+def delete_old_articles():
+    conn = get_connection()
+    cutoff = datetime.now() - timedelta(days=7)
+    cutoff_str = cutoff.strftime("%Y-%m-%d %H:%M:%S")
+
+    conn.execute("DELETE FROM articles WHERE published < ?", (cutoff_str,))
+    conn.commit()
 
 if __name__ == "__main__":
     fetch_all()
