@@ -22,6 +22,10 @@ app = FastAPI(lifespan=lifespan)
 def serve_ui():
     return FileResponse("static/index.html")
 
+@app.get("/saved-page")
+def serve_saved_page():
+    return FileResponse("static/saved.html")
+
 @app.get("/articles")
 def get_articles(unread_only: bool = False, source: str = None):
     conn = get_connection()
@@ -82,3 +86,55 @@ def delete_source(source_id: int):
     conn.execute("DELETE FROM sources WHERE id = ?", (source_id,))
     conn.commit()
     return {"status": "deleted", "id": source_id}
+
+@app.post("/articles/{article_id}/save")
+def save_article(article_id: int):
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT title, link, source, published FROM articles WHERE id = ?",
+        (article_id,)
+    ).fetchone()
+
+    if row is None:
+        return {"error": "Article not found."}
+
+    title, link, source, published = row
+
+    try:
+        conn.execute(
+            "INSERT INTO saved_articles (title, link, source, published) VALUES (?, ?, ?, ?)",
+            (title, link, source, published)
+        )
+        conn.commit()
+    except ValueError:
+        return {"error": "Article is already saved."}
+
+    return {"status": "saved", "link": link}
+
+
+@app.get("/saved")
+def get_saved_articles():
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT id, title, link, source, published, saved_at FROM saved_articles ORDER BY saved_at DESC"
+    ).fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "title": row[1],
+            "link": row[2],
+            "source": row[3],
+            "published": row[4],
+            "saved_at": row[5],
+        }
+        for row in rows
+    ]
+
+
+@app.delete("/saved/{saved_id}")
+def unsave_article(saved_id: int):
+    conn = get_connection()
+    conn.execute("DELETE FROM saved_articles WHERE id = ?", (saved_id,))
+    conn.commit()
+    return {"status": "removed", "id": saved_id}

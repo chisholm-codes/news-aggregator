@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Articles</title>
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --card-bg: white;
+      --text-color: #222;
+      --source-color: #888;
+      --boarder-color: #ddd;
+      --mutsec-color: #999;
+      --divline-color: #eee;
+      --button-bg: #f9f9f9;
+    }
+    [data-theme="dark"] {
+      --bg-color: #1a1a1a;
+      --card-bg: #242424;
+      --text-color: #e0e0e0;
+      --source-color: #999;
+      --boarder-color: #3a3a3a;
+      --mutsec-color: #888;
+      --divline-color: #333;
+      --button-bg: #2a2a2a;
+    }
+    body {
+      font-family: -apple-system, sans-serif;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 16px;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .article {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .source {
+      font-size: 12px;
+      color: var(--source-color);
+      text-transform: uppercase;
+    }
+    .title a {
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .remove-btn {
+      flex-shrink: 0;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--boarder-color);
+      background: var(--button-bg);
+      color: var(--mutsec-color);
+      cursor: pointer;
+    }
+    .back-link {
+      color: var(--mutsec-color);
+      text-decoration: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h1 style="margin: 0;">Saved Articles</h1>
+    <a href="/" class="back-link">← Back to feed</a>
+  </div>
+
+  <div id="saved-articles"></div>
+
+  <script>
+    function applyTheme() {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+
+    function timeAgo(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString.replace(' ', 'T') + 'Z');
+      const seconds = Math.floor((new Date() - date) / 1000);
+
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    async function loadSaved() {
+      const response = await fetch('/saved');
+      const saved = await response.json();
+
+      const container = document.getElementById('saved-articles');
+      container.innerHTML = '';
+
+      if (saved.length === 0) {
+        container.innerHTML = '<div style="font-size: 14px; color: var(--mutsec-color);">No saved articles yet.</div>';
+        return;
+      }
+
+      saved.forEach(article => {
+        const div = document.createElement('div');
+        div.className = 'article';
+
+        div.innerHTML = `
+          <div style="flex: 1; min-width: 0;">
+            <div class="source">${article.source} · saved ${timeAgo(article.saved_at)}</div>
+            <div class="title"><a href="${article.link}" target="_blank">${article.title}</a></div>
+          </div>
+          <button class="remove-btn" onclick="removeSaved(${article.id}, this)">Remove</button>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    async function removeSaved(id, button) {
+      button.disabled = true;
+      await fetch(`/saved/${id}`, { method: 'DELETE' });
+      loadSaved();
+    }
+
+    applyTheme();
+    loadSaved();
+  </script>
+</body>
+</html>

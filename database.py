@@ -29,6 +29,16 @@ def create_table():
             url TEXT NOT NULL UNIQUE
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS saved_articles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            link TEXT NOT NULL UNIQUE,
+            source TEXT,
+            published TEXT,
+            saved_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
 
 if __name__ == "__main__":

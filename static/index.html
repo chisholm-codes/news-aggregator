@@ -41,6 +41,10 @@
       padding: 16px;
       margin-bottom: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
     }
     .source {
       font-size: 12px;
@@ -59,13 +63,29 @@
       cursor: pointer;
       color: var(--text-color);
     }
+    .save-btn {
+      flex-shrink: 0;
+      margin-top: 0;
+      font-size: 16px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--boarder-color);
+      background: var(--button-bg);
+      color: var(--text-color);
+      cursor: pointer;
+    }
+    .save-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
   </style>
 </head>
 <body>
- <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-  <h1 style="margin: 0;">My Daily Feed</h1>
-  <button onclick="refreshFeeds()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px;">🔄</button>
-  <button onclick="toggleTheme()" id="theme-toggle" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px;">💡</button>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <h1 style="margin: 0;">My Daily Feed</h1>
+    <button onclick="refreshFeeds()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px;">🔄</button>
+    <a href="/saved-page" style="text-decoration: none; font-size: 20px; padding: 4px;">⭐</a>
+    <button onclick="toggleTheme()" id="theme-toggle" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px;">💡</button>
 </div>
 
 <details style="margin-bottom: 16px;">
@@ -102,9 +122,17 @@
       }
     }
     
+    let savedLinks = new Set();
+
     async function loadArticles() {
-      const response = await fetch('/articles');
-      const articles = await response.json();
+      const [articlesRes, savedRes] = await Promise.all([
+        fetch('/articles'),
+        fetch('/saved')
+      ]);
+      const articles = await articlesRes.json();
+      const saved = await savedRes.json();
+
+      savedLinks = new Set(saved.map(a => a.link));
 
       const container = document.getElementById('articles');
       container.innerHTML = '';
@@ -113,15 +141,72 @@
         const div = document.createElement('div');
         div.className = 'article';
 
+        const isSaved = savedLinks.has(article.link);
+
         div.innerHTML = `
-          <div class="source">${article.source} · ${timeAgo(article.published)}</div>
-          <div class="title"><a href="${article.link}" target="_blank">${article.title}</a></div>
+          <div style="flex: 1; min-width: 0;">
+            <div class="source">${article.source} · ${timeAgo(article.published)}</div>
+            <div class="title"><a href="${article.link}" target="_blank">${article.title}</a></div>
+          </div>
+          <button class="save-btn" onclick="saveArticle(${article.id}, this)" ${isSaved ? 'disabled' : ''}>${isSaved ? '★' : '☆'}</button>
         `;
 
         container.appendChild(div);
       });
     }
 
+    async function saveArticle(articleId, button) {
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      const response = await fetch(`/articles/${articleId}/save`, { method: 'POST' });
+      const result = await response.json();
+
+      if (result.error) {
+        button.textContent = '☆ Save';
+        button.disabled = false;
+        return;
+      }
+
+      button.textContent = '★ Saved';
+      loadSaved();
+    }
+
+    async function loadSaved() {
+      const response = await fetch('/saved');
+      const saved = await response.json();
+
+      const container = document.getElementById('saved-articles');
+      container.innerHTML = '';
+
+      if (saved.length === 0) {
+        container.innerHTML = '<div style="font-size: 13px; color: var(--mutsec-color);">No saved articles yet.</div>';
+        return;
+      }
+
+      saved.forEach((article, index) => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.style.fontSize = '13px';
+        div.style.padding = '6px 0';
+        if (index !== saved.length - 1) {
+          div.style.borderBottom = '1px solid var(--divline-color)';
+        }
+        div.innerHTML = `
+          <a href="${article.link}" target="_blank" style="color: var(--text-color); text-decoration: none; flex: 1; margin-right: 8px;">${article.title}</a>
+          <button onclick="removeSaved(${article.id})" style="font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--boarder-color); background: var(--button-bg); color: var(--mutsec-color); cursor: pointer;">Remove</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function removeSaved(id) {
+      await fetch(`/saved/${id}`, { method: 'DELETE' });
+      loadSaved();
+      loadArticles();
+    }
     async function refreshFeeds() {
       const button = document.querySelector('button[onclick="refreshFeeds()"]');
       button.disabled = true;
@@ -195,6 +280,7 @@ async function deleteSource(id) {
 applyTheme();
 loadArticles();    
 loadSources();
+loadSaved();
 
   </script>
 </body>
