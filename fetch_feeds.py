@@ -42,8 +42,14 @@ def fetch_all():
                     name,
                     published_date,
                 )
+    try:
+        from scrape_lions import scrape_lions
+        scrape_lions()
+    except Exception as e:
+        print(f"Lions scrape failed: {e}")
 
     print("Fetch complete.")
+    
 
 def delete_old_articles():
     conn = get_connection()
