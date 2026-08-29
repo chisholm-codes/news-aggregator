@@ -88,6 +88,12 @@ def add_source(name: str, url: str):
 @app.delete("/sources/{source_id}")
 def delete_source(source_id: int):
     conn = get_connection()
+    row = conn.execute("SELECT name FROM sources WHERE id = ?", (source_id,)).fetchone()
+    if row is None:
+        return {"error": "Source not found."}
+    name = row[0]
+
+    conn.execute("DELETE FROM articles WHERE source = ?", (name,))
     conn.execute("DELETE FROM sources WHERE id = ?", (source_id,))
     conn.commit()
     return {"status": "deleted", "id": source_id}

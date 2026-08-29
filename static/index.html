@@ -289,6 +289,7 @@ async function addSource(event) {
 async function deleteSource(id) {
   await fetch(`/sources/${id}`, { method: 'DELETE' });
   loadSources();
+  loadArticles();
 }
 
 applyTheme();
