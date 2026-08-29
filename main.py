@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import get_connection
 from fetch_feeds import fetch_all
+from discover_feed import discover_feed
 
 scheduler = BackgroundScheduler()
 
@@ -72,13 +73,17 @@ def get_sources():
 
 @app.post("/sources")
 def add_source(name: str, url: str):
+    feed_url = discover_feed(url)
+    if feed_url is None:
+        return {"error": "Couldn't find an RSS feed at that URL. This site may need a custom scraper."}
+
     conn = get_connection()
     try:
-        conn.execute("INSERT INTO sources (name, url) VALUES (?, ?)", (name, url))
+        conn.execute("INSERT INTO sources (name, url) VALUES (?, ?)", (name, feed_url))
         conn.commit()
     except ValueError:
         return {"error": "That URL is already added."}
-    return {"status": "added", "name": name, "url": url}
+    return {"status": "added", "name": name, "url": feed_url}
 
 @app.delete("/sources/{source_id}")
 def delete_source(source_id: int):

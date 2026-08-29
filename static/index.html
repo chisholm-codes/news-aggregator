@@ -100,7 +100,7 @@
   <form onsubmit="return addSource(event)" style="margin-top: 8px; display: flex; gap: 6px;">
   <div style="margin-top: 10px; font-size: 12px; color: var(--mutsec-color);">Need to turn an email newsletter into an RSS feed? <a href="https://kill-the-newsletter.com/" target="_blank" style="color: var(--mutsec-color);">Kill the Newsletter</a></div>
     <input type="text" id="new-source-name" placeholder="Name" required style="flex: 1; padding: 6px 8px; border: 1px solid var(--boarder-color); border-radius: 6px; font-size: 13px;">
-    <input type="url" id="new-source-url" placeholder="Feed URL" required style="flex: 2; padding: 6px 8px; border: 1px solid var(--boarder-color); border-radius: 6px; font-size: 13px;">
+    <input type="url" id="new-source-url" placeholder="Site or Feed URL" required style="flex: 2; padding: 6px 8px; border: 1px solid var(--boarder-color); border-radius: 6px; font-size: 13px;">
     <button type="submit" style="font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--boarder-color); background: var(--card-bg);">Add</button>
   </form>
 </details>
@@ -268,15 +268,23 @@ async function addSource(event) {
   const name = document.getElementById('new-source-name').value;
   const url = document.getElementById('new-source-url').value;
 
-  await fetch(`/sources?name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`, {
+  const response = await fetch(`/sources?name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`, {
     method: 'POST'
   });
+  const result = await response.json();
+
+  if (result.error) {
+    alert(result.error);
+    return false;
+  }
 
   document.getElementById('new-source-name').value = '';
   document.getElementById('new-source-url').value = '';
   loadSources();
+  loadArticles();
   return false;
 }
+
 
 async function deleteSource(id) {
   await fetch(`/sources/${id}`, { method: 'DELETE' });
